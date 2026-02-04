@@ -1,10 +1,12 @@
-# ⛏️ Salty – CREATE2 Salt Miner
+# ⛏️ Salty – CREATE2 Salt Miner (Pattern-Based Fork)
 
 Nickname: `salty`
 
-An _extremely_ fast miner for finding salts that create gas-efficient and vanity Ethereum addresses via `CREATE2`.
+An _extremely_ fast miner for finding salts that create vanity Ethereum addresses via `CREATE2` with **pattern-based matching**.
 
-Salty only searches for results better than what is already found. For example, if a salt is found that results in an address with 3 leading zero bytes, the next salt will only be displayed if it results in an address with 4 leading zero bytes. This improves performance by reducing the number of times the kernel needs to communicate with the host.
+This fork extends the original Salty miner to support searching for specific hex patterns in the resulting contract addresses, enabling true vanity address mining beyond just leading zeros.
+
+Salty only searches for results better than what is already found, displaying the next salt only if it results in a better match for your specified pattern. This improves performance by reducing the number of times the kernel needs to communicate with the host.
 
 Salty can run for a really long time and will keep finding better salts. It is recommended to leave it running for a few hours if you're looking to find a salt that results in an efficient address.
 
@@ -21,7 +23,7 @@ Salty is currently tested on Linux, macOS and Windows. It works with CPUs, GPUs 
 You'll need Rust and OpenCL SDK installed and available in `PATH`. Start by cloning the repository.
 
 ```bash
-git clone git@github.com:akshatmittal/create2-salt-miner.git
+git clone git@github.com:wei-b0/create2-salt-miner.git
 ```
 
 You can then run it with `cargo` by providing each option as an argument.
@@ -50,7 +52,7 @@ cargo run --release -- list
 - [x] OpenCL Backend (CPU, GPU, Accelerators)
 - [x] Ranking Mode (Zero Bytes)
 - [ ] Ranking Mode (Any Bytes)
-- [ ] Pattern Matching Mode
+- [x] Pattern Matching Mode
 - [x] CREATE2 Support
 - [ ] Hardhat Plugin
 - [ ] Foundry Plugin
@@ -68,6 +70,7 @@ The following parameters are available when using the `mine` command.
 | `codehash` | Keccak-256 hash of the contract initialization code                  | (required parameter)                         |
 | `worksize` | Work size per batch                                                  | `0x4400000`                                  |
 | `zeros`    | Minimum zero bytes to look for in the created contract (no stop)     | `1`                                          |
+| `pattern`  | Hex pattern to search for in the resulting address (e.g., "deadbeef")| (optional, overrides zeros mode)             |
 
 ## Performance Benchmarks
 
@@ -82,7 +85,8 @@ Speed is measured in million attempts per second.
 
 ## Acknowledgements
 
-This project is heavily inspired by 0age's `create2crunch`. The code for the OpenCL Kernel is taken from there and modified to work in this context.
+This fork is based on the original [Salty](https://github.com/akshatmittal/create2-salt-miner) by [Akshat Mittal](https://github.com/akshatmittal), which is heavily inspired by 0age's `create2crunch`. The code for the OpenCL Kernel is taken from there and modified to work in this context.
 
-- [0age](https://github.com/0age)
+- [Akshat Mittal](https://github.com/akshatmittal) - Original Salty implementation
+- [0age](https://github.com/0age) - create2crunch inspiration and OpenCL kernel code
 - [Khronos OpenCL SDK](https://github.com/KhronosGroup/OpenCL-SDK)

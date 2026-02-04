@@ -59,7 +59,7 @@ impl Display {
         self.term.clear_screen().unwrap();
     }
 
-    pub fn update(&self, work_rate: u128, current_target: usize, found_salts: &Vec<String>) {
+    pub fn update(&self, work_rate: u128, pattern_len: usize, found_salts: &Vec<String>) {
         println!("{:?}", self.start_time);
 
         let total_runtime = SystemTime::now()
@@ -85,7 +85,7 @@ impl Display {
 
             self.pb
                 .target
-                .set_message(format!("Current Target: {} leading bytes", current_target,));
+                .set_message(format!("Pattern Length: {} bytes", pattern_len,));
         }
 
         for found_salt in found_salts {

@@ -68,8 +68,6 @@ pub fn start_miner(config: AppConfig, display: Display) {
     // the last work duration in milliseconds
     let mut work_duration_millis: u64 = 0;
 
-    let mut next_zeros: usize = config.zeros.clone();
-
     loop {
         // construct the 4-byte message to hash, leaving last 8 of salt empty
         let salt = FixedBytes::<4>::random();
@@ -78,6 +76,15 @@ pub fn start_miner(config: AppConfig, display: Display) {
             .flags(MemFlags::new().read_only())
             .len(4)
             .copy_host_slice(&salt[..])
+            .build()
+            .unwrap();
+
+        // create pattern buffer
+        let pattern_buffer = Buffer::builder()
+            .queue(program_queue.queue().clone())
+            .flags(MemFlags::new().read_only())
+            .len(config.pattern_len)
+            .copy_host_slice(&config.pattern[..])
             .build()
             .unwrap();
 
@@ -109,7 +116,8 @@ pub fn start_miner(config: AppConfig, display: Display) {
                 .kernel_builder("hashMessage")
                 .arg_named("message", None::<&Buffer<u8>>)
                 .arg_named("nonce", None::<&Buffer<u32>>)
-                .arg_named("min_zeros", None::<&Buffer<u32>>)
+                .arg_named("pattern", None::<&Buffer<u8>>)
+                .arg_named("pattern_len", None::<&Buffer<u32>>)
                 .arg_named("solutions", None::<&Buffer<u64>>)
                 .build()
                 .unwrap();
@@ -117,7 +125,8 @@ pub fn start_miner(config: AppConfig, display: Display) {
             // set each buffer
             kernel.set_arg("message", Some(&salt_buffer)).unwrap();
             kernel.set_arg("nonce", Some(&nonce_buffer)).unwrap();
-            kernel.set_arg("min_zeros", next_zeros as u32).unwrap();
+            kernel.set_arg("pattern", Some(&pattern_buffer)).unwrap();
+            kernel.set_arg("pattern_len", config.pattern_len as u32).unwrap();
             kernel.set_arg("solutions", &solutions_buffer).unwrap();
 
             // enqueue the kernel
@@ -139,7 +148,7 @@ pub fn start_miner(config: AppConfig, display: Display) {
                 // determine the number of attempts being made per second
                 let work_rate: u128 = workfactor * cumulative_nonce as u128;
 
-                display.update(work_rate, next_zeros, &found_list);
+                display.update(work_rate, config.pattern_len, &found_list);
             }
 
             // increment the cumulative nonce (does not reset after a match)
@@ -210,30 +219,27 @@ pub fn start_miner(config: AppConfig, display: Display) {
             // get the address that results from the hash
             let address = <&Address>::try_from(&res[12..]).unwrap();
 
-            // count total and leading zero bytes
-            let mut leading = 0;
-            for (i, &b) in address.iter().enumerate() {
-                if b != 0 && leading == 0 {
-                    // set leading on finding non-zero byte
-                    leading = i;
+            // verify the pattern match
+            let mut matches = true;
+            for i in 0..config.pattern_len {
+                if address[i] != config.pattern[i] {
+                    matches = false;
                     break;
                 }
             }
 
-            let output = format!(
-                "0x{}{}{} => {} (Score: {})",
-                hex::encode(config.caller),
-                hex::encode(salt),
-                hex::encode(solution),
-                address,
-                leading,
-            );
+            if matches {
+                let output = format!(
+                    "0x{}{}{} => {} (Pattern: {})",
+                    hex::encode(config.caller),
+                    hex::encode(salt),
+                    hex::encode(solution),
+                    address,
+                    hex::encode(&config.pattern),
+                );
 
-            if leading >= next_zeros {
-                next_zeros = leading + 1;
+                found_list.push(output);
             }
-
-            found_list.push(output);
         }
     }
 }

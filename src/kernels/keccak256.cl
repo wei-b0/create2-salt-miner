@@ -201,10 +201,10 @@ static inline void keccakf(ulong *a) {
 #undef o
 }
 
-static inline bool hasLeading(uchar const *d, uint const leading) {
+static inline bool matchesPattern(uchar const *d, __constant uchar const *pattern, uint const pattern_len) {
 #pragma unroll
-  for (uint i = 0; i < leading; ++i) {
-    if (d[i] != 0)
+  for (uint i = 0; i < pattern_len; ++i) {
+    if (d[i] != pattern[i])
       return false;
   }
 
@@ -213,7 +213,8 @@ static inline bool hasLeading(uchar const *d, uint const leading) {
 
 __kernel void hashMessage(__constant uchar const *d_message,
                           __constant uint const *d_nonce,
-                          uint const min_zeros, // min zeros to target
+                          __constant uchar const *pattern,
+                          uint const pattern_len,
                           __global volatile ulong *restrict solutions) {
 
   ulong spongeBuffer[25];
@@ -339,7 +340,7 @@ __kernel void hashMessage(__constant uchar const *d_message,
   keccakf(spongeBuffer);
 
   // determine if the address meets the constraints
-  if (hasLeading(digest, min_zeros)) {
+  if (matchesPattern(digest, pattern, pattern_len)) {
     // To be honest, if we are using OpenCL,
     // we just need to write one solution for all practical purposes,
     // since the chance of multiple solutions appearing

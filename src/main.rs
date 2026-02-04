@@ -36,10 +36,10 @@ struct MineArgs {
     #[serde(skip_serializing_if = "::std::option::Option::is_none")]
     worksize: Option<u32>,
 
-    /// Minimum zeros to look for
+    /// Hex pattern to match at start of address (e.g., '01010101')
     #[arg(short, long)]
     #[serde(skip_serializing_if = "::std::option::Option::is_none")]
-    zeros: Option<usize>,
+    pattern: Option<String>,
 }
 
 #[derive(Subcommand, Debug, Serialize, Deserialize)]
@@ -63,7 +63,8 @@ pub struct AppConfig {
     pub caller: [u8; 20],
     pub codehash: [u8; 32],
     pub worksize: u32,
-    pub zeros: usize,
+    pub pattern: Vec<u8>,
+    pub pattern_len: usize,
 }
 
 fn main() {
@@ -84,6 +85,28 @@ fn main() {
                 process::exit(1);
             }
 
+            // Parse and validate the pattern
+            let pattern_str = unwrapped.pattern.unwrap_or("00".to_string());
+            let pattern_bytes = match hex::decode(&pattern_str) {
+                Ok(bytes) => bytes,
+                Err(_) => {
+                    eprintln!("Invalid hex pattern provided: '{}'. Please provide a valid hex string (e.g., '01010101').", pattern_str);
+                    process::exit(1);
+                }
+            };
+
+            if pattern_bytes.is_empty() {
+                eprintln!("Pattern cannot be empty. Please provide a valid hex pattern.");
+                process::exit(1);
+            }
+
+            if pattern_bytes.len() > 20 {
+                eprintln!("Pattern is too long ({} bytes). Maximum address length is 20 bytes.", pattern_bytes.len());
+                process::exit(1);
+            }
+
+            let pattern_len = pattern_bytes.len();
+
             let app_config = AppConfig {
                 factory: hex::decode(
                     unwrapped
@@ -102,7 +125,8 @@ fn main() {
                     .try_into()
                     .unwrap(),
                 worksize: unwrapped.worksize.unwrap_or(0x4400000 as u32),
-                zeros: unwrapped.zeros.unwrap_or(1 as usize),
+                pattern: pattern_bytes,
+                pattern_len: pattern_len,
             };
 
             let display = Display::new();
