@@ -4,9 +4,7 @@ Nickname: `salty`
 
 An _extremely_ fast miner for finding salts that create vanity Ethereum addresses via `CREATE2` with **pattern-based matching**.
 
-This fork extends the original Salty miner to support searching for specific hex patterns in the resulting contract addresses, enabling true vanity address mining beyond just leading zeros.
-
-Salty only searches for results better than what is already found, displaying the next salt only if it results in a better match for your specified pattern. This improves performance by reducing the number of times the kernel needs to communicate with the host.
+This fork extends the original Salty miner to support searching for specific hex patterns in the resulting contract addresses, enabling true vanity address mining beyond just leading zeros. Pattern matching is the default and only active mode in the current code.
 
 Salty can run for a really long time and will keep finding better salts. It is recommended to leave it running for a few hours if you're looking to find a salt that results in an efficient address.
 
@@ -50,7 +48,7 @@ cargo run --release -- list
 
 - [x] Multiple Config Sources (CLI, Config File)
 - [x] OpenCL Backend (CPU, GPU, Accelerators)
-- [x] Ranking Mode (Zero Bytes)
+- [ ] Ranking Mode (Zero Bytes) (legacy; not enforced in current code path)
 - [ ] Ranking Mode (Any Bytes)
 - [x] Pattern Matching Mode
 - [x] CREATE2 Support
@@ -63,14 +61,13 @@ cargo run --release -- list
 
 The following parameters are available when using the `mine` command.
 
-| Option     | Description                                                          | Default                                      |
-| ---------- | -------------------------------------------------------------------- | -------------------------------------------- |
-| `factory`  | Factory address that will be used to deploy the contract via CREATE2 | `0x0000000000FFe8B47B3e2130213B802212439497` |
-| `caller`   | Caller for the deployment                                            | (required parameter)                         |
-| `codehash` | Keccak-256 hash of the contract initialization code                  | (required parameter)                         |
-| `worksize` | Work size per batch                                                  | `0x4400000`                                  |
-| `zeros`    | Minimum zero bytes to look for in the created contract (no stop)     | `1`                                          |
-| `pattern`  | Hex pattern to search for in the resulting address (e.g., "deadbeef")| (optional, overrides zeros mode)             |
+| Option     | Description                                                           | Default                                      |
+| ---------- | --------------------------------------------------------------------- | -------------------------------------------- |
+| `factory`  | Factory address that will be used to deploy the contract via CREATE2  | `0x0000000000FFe8B47B3e2130213B802212439497` |
+| `caller`   | Caller for the deployment                                             | (required parameter)                         |
+| `codehash` | Keccak-256 hash of the contract initialization code                   | (required parameter)                         |
+| `worksize` | Work size per batch                                                   | `0x4400000`                                  |
+| `pattern`  | Hex pattern to search for in the resulting address (e.g., "deadbeef") | (required; default mode)                     |
 
 ## Browser (WASM) Build
 
