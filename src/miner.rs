@@ -4,7 +4,7 @@ use rand::Rng;
 use std::fmt::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::{AppConfig, Display};
+use crate::{core::MinerConfig, Display};
 
 static KERNEL_SRC: &str = include_str!("./kernels/keccak256.cl");
 
@@ -30,7 +30,7 @@ const CONTROL_CHARACTER: u8 = 0xff;
 ///
 /// This method is highly experimental and could certainly use further optimization.
 /// Contributions are welcome as always!
-pub fn start_miner(config: AppConfig, display: Display) {
+pub fn start_miner(config: MinerConfig, display: Display) {
     println!("Preparing OpenCL Miner...",);
 
     let worksize = config.worksize.clone();
@@ -244,7 +244,7 @@ pub fn start_miner(config: AppConfig, display: Display) {
     }
 }
 
-fn mk_kernel_src(config: &AppConfig) -> String {
+fn mk_kernel_src(config: &MinerConfig) -> String {
     let mut src = String::with_capacity(2048 + KERNEL_SRC.len());
 
     let factory = config.factory.iter();

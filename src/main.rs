@@ -1,4 +1,3 @@
-use alloy_primitives::hex;
 use clap::{Parser, Subcommand};
 use figment::{
     providers::{Format, Serialized, Toml},
@@ -7,10 +6,12 @@ use figment::{
 use serde::{Deserialize, Serialize};
 use std::process;
 
+mod core;
 mod display;
 mod gpgpu;
 mod miner;
 
+use crate::core::{parse_config, RawConfig};
 pub use display::Display;
 pub use miner::start_miner;
 
@@ -57,16 +58,7 @@ struct CLI {
     mode: Commands,
 }
 
-#[derive(Debug)]
-pub struct AppConfig {
-    pub factory: [u8; 20],
-    pub caller: [u8; 20],
-    pub codehash: [u8; 32],
-    pub worksize: u32,
-    pub pattern: Vec<u8>,
-    pub pattern_len: usize,
-}
-
+#[cfg(feature = "cli")]
 fn main() {
     let cli = CLI::parse();
 
@@ -85,48 +77,22 @@ fn main() {
                 process::exit(1);
             }
 
-            // Parse and validate the pattern
-            let pattern_str = unwrapped.pattern.unwrap_or("00".to_string());
-            let pattern_bytes = match hex::decode(&pattern_str) {
-                Ok(bytes) => bytes,
-                Err(_) => {
-                    eprintln!("Invalid hex pattern provided: '{}'. Please provide a valid hex string (e.g., '01010101').", pattern_str);
-                    process::exit(1);
-                }
+            let raw = RawConfig {
+                factory: unwrapped
+                    .factory
+                    .unwrap_or("0x0000000000FFe8B47B3e2130213B802212439497".to_string()),
+                caller: unwrapped.caller.unwrap_or("0x00".to_string()),
+                codehash: unwrapped.codehash.unwrap_or("0x00".to_string()),
+                worksize: unwrapped.worksize.unwrap_or(0x4400000 as u32),
+                pattern: unwrapped.pattern.unwrap_or("00".to_string()),
             };
 
-            if pattern_bytes.is_empty() {
-                eprintln!("Pattern cannot be empty. Please provide a valid hex pattern.");
-                process::exit(1);
-            }
-
-            if pattern_bytes.len() > 20 {
-                eprintln!("Pattern is too long ({} bytes). Maximum address length is 20 bytes.", pattern_bytes.len());
-                process::exit(1);
-            }
-
-            let pattern_len = pattern_bytes.len();
-
-            let app_config = AppConfig {
-                factory: hex::decode(
-                    unwrapped
-                        .factory
-                        .unwrap_or("0x0000000000FFe8B47B3e2130213B802212439497".to_string()),
-                )
-                .unwrap()
-                .try_into()
-                .unwrap(),
-                caller: hex::decode(unwrapped.caller.unwrap_or("0x00".to_string()))
-                    .unwrap()
-                    .try_into()
-                    .unwrap(),
-                codehash: hex::decode(unwrapped.codehash.unwrap_or("0x00".to_string()))
-                    .unwrap()
-                    .try_into()
-                    .unwrap(),
-                worksize: unwrapped.worksize.unwrap_or(0x4400000 as u32),
-                pattern: pattern_bytes,
-                pattern_len: pattern_len,
+            let app_config = match parse_config(raw) {
+                Ok(cfg) => cfg,
+                Err(err) => {
+                    eprintln!("{}", err);
+                    process::exit(1);
+                }
             };
 
             let display = Display::new();
@@ -137,4 +103,9 @@ fn main() {
             gpgpu::list_devices();
         }
     }
+}
+
+#[cfg(not(feature = "cli"))]
+fn main() {
+    eprintln!("CLI feature is disabled. Enable it with `--features cli`.");
 }

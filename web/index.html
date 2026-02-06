@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Salty WASM Miner</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">CREATE2 Vanity Miner</p>
+          <h1>Salty, in the browser.</h1>
+          <p class="lead">
+            CPU-only WASM miner with multi-worker parallelism. Tune worksize to
+            balance speed and responsiveness.
+          </p>
+        </div>
+        <div class="status-card" id="statusCard">
+          <div class="status-row">
+            <span>Runtime</span>
+            <strong id="runtime">0s</strong>
+          </div>
+          <div class="status-row">
+            <span>Attempts/sec</span>
+            <strong id="rate">0</strong>
+          </div>
+          <div class="status-row">
+            <span>Pattern</span>
+            <strong id="patternLen">0 bytes</strong>
+          </div>
+        </div>
+        <div class="status-card" id="difficultyCard">
+          <div class="status-row">
+            <span>Difficulty</span>
+            <strong id="difficulty">0</strong>
+          </div>
+          <div class="status-row">
+            <span>Generated</span>
+            <strong id="generated">0</strong>
+          </div>
+          <div class="status-row">
+            <span>50% Probability</span>
+            <strong id="median">0</strong>
+          </div>
+          <div class="progress">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <p class="progress-label" id="progressLabel">0% chance</p>
+        </div>
+      </header>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Configuration</h2>
+          <p>Defaults match `salty.toml`. All hex fields accept 0x prefix.</p>
+        </div>
+        <form id="configForm" class="grid">
+          <label>
+            Factory
+            <input name="factory" type="text" />
+          </label>
+          <label>
+            Caller
+            <input name="caller" type="text" />
+          </label>
+          <label>
+            Codehash
+            <input name="codehash" type="text" />
+          </label>
+          <label>
+            Pattern
+            <input name="pattern" type="text" />
+          </label>
+          <label>
+            Worksize
+            <input name="worksize" type="text" />
+          </label>
+          <label>
+            Workers
+            <input name="workers" type="range" min="1" max="1" step="1" />
+            <div class="range-meta">
+              <span id="workersValue">1</span>
+              <span id="workersMax">1</span>
+            </div>
+          </label>
+          <div class="actions">
+            <button type="button" id="startBtn">Start</button>
+            <button type="button" id="stopBtn" disabled>Stop</button>
+          </div>
+        </form>
+        <p class="hint" id="hintText"></p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Results</h2>
+          <p>New salts appear at the top.</p>
+        </div>
+        <div id="log" class="log"></div>
+      </section>
+    </main>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

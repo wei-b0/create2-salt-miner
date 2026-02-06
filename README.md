@@ -57,7 +57,7 @@ cargo run --release -- list
 - [ ] Hardhat Plugin
 - [ ] Foundry Plugin
 - [ ] CREATE3 Support
-- [ ] WASM Build (is that even possible?)
+- [x] WASM Build (CPU, multi-worker)
 
 ## Parameters
 
@@ -71,6 +71,40 @@ The following parameters are available when using the `mine` command.
 | `worksize` | Work size per batch                                                  | `0x4400000`                                  |
 | `zeros`    | Minimum zero bytes to look for in the created contract (no stop)     | `1`                                          |
 | `pattern`  | Hex pattern to search for in the resulting address (e.g., "deadbeef")| (optional, overrides zeros mode)             |
+
+## Browser (WASM) Build
+
+This repo now includes a browser-hosted WASM miner with a minimal UI in `web/`.
+
+### Build
+
+```bash
+rustup target add wasm32-unknown-unknown
+cargo install wasm-pack
+wasm-pack build --release --target web --out-dir web/pkg --no-default-features --features wasm
+```
+
+### Run Locally
+
+Use any static file server. For best performance (and SharedArrayBuffer support), set COOP/COEP headers:
+
+```bash
+cd web
+python3 -m http.server 8080
+```
+
+Open `http://localhost:8080` in a modern browser.
+
+### Required Headers
+
+For multi-worker performance, set:
+
+```
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp
+```
+
+Sample configs are included at `web/_headers` (Netlify) and `web/vercel.json`.
 
 ## Performance Benchmarks
 
